@@ -160,6 +160,27 @@ def write_numberOfFoci(img,size,boxes):
       n_foci = cv2.putText(gray_img, str(i), (centroid_x,centroid_y), font, fontScale, (0,255,255), 1, cv2.LINE_AA)
   return gray_img
 
+# foci filter for create the binary image (mask pixel)
+def foci_filter(img,size,boxes):
+  bg = np.zeros((size,size), dtype=np.uint8) #[0-499,0-499] #y,x
+  for i in range(len(boxes)):
+    x_min = boxes[i][0]
+    y_min = boxes[i][1]
+    length= boxes[i][2]
+    high= boxes[i][3]
+
+    x_position = [x_min+count for count in range(length)]
+    y_position = [y_min+count for count in range(high)]
+    for j in x_position:
+      for k in y_position:
+        if img[k][j] != 0:
+          bg[k][j] = 255
+        else:
+          continue
+  mask = bg.astype(np.uint8)
+  return mask
+
+
 #  ======================= program =======================
 
 def get_median_radius(path,imagesize):
@@ -173,14 +194,3 @@ def get_median_radius(path,imagesize):
     a,b,r = inner_border
     radius.append(r)
   return radius_selector(radius)
-  
-def main(img,imagesize,margin,med_r,min_pixels):
-  # border detection
-  inner_border = border_detection(img, imagesize, 0)
-  # image cropping
-  img_croped = crop_inner_circle(img, imagesize, inner_border,med_r-margin)
-  # foci detection
-  binary_img = binary_Threshold(img_croped,inner_border)
-  box = foci_detection(binary_img, inner_border, min_pixels)
-  # foci count
-  return foci_count(box)
